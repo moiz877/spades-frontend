@@ -84,6 +84,13 @@
       "sourceType": "github-manual",
       "skillPath": "skills/awesome-design-md/SKILL.md",
       "note": "Not a native skills-CLI package (no SKILL.md upstream) — hand-wrapped around the repo's design-md/ collection of brand DESIGN.md reference docs."
+    },
+    "playwright-cli": {
+      "source": "@playwright/cli",
+      "sourceType": "npm",
+      "version": "0.1.18",
+      "skillPath": "skills/playwright-cli/SKILL.md",
+      "note": "Official skill bundled with the @playwright/cli npm package, copied in as-is."
     }
   }
 }
