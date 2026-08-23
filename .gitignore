@@ -1,0 +1,33 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+build/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Raw EIA source data — never committed, ingested straight into MongoDB
+/data/AEO2026.txt
+/data/IEO.txt
+/data/*.txt
+
+# OS / editor
+.DS_Store
+*.log
+.vscode/
+.idea/
