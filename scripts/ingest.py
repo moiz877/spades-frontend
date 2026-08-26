@@ -26,7 +26,7 @@ from typing import Any, Iterator
 from pymongo import ASCENDING, MongoClient, TEXT, UpdateOne
 from pymongo.errors import ConfigurationError, PyMongoError
 
-BATCH_SIZE = 1000
+BATCH_SIZE = 5000
 LOG_EVERY = 5000
 
 SOURCES = {
