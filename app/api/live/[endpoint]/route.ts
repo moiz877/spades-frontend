@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Collection } from 'mongodb';
 import { getDb } from '@/lib/mongodb';
 import { LIVE_ENDPOINTS } from '@/lib/liveEndpoints';
 
@@ -25,10 +26,20 @@ export async function GET(
     );
   }
 
-  const db = await getDb();
-  const cache = db.collection<CacheDoc>(CACHE_COLLECTION);
+  let cached: CacheDoc | null;
+  let cache: Collection<CacheDoc>;
+  try {
+    const db = await getDb();
+    cache = db.collection<CacheDoc>(CACHE_COLLECTION);
+    cached = await cache.findOne({ endpoint });
+  } catch (err) {
+    console.error(`GET /api/live/${endpoint} failed to reach the database:`, err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to connect to the database.' },
+      { status: 500 }
+    );
+  }
 
-  const cached = await cache.findOne({ endpoint });
   const isFresh = cached && Date.now() - cached.fetched_at.getTime() < CACHE_TTL_MS;
 
   if (isFresh) {
