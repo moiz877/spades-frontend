@@ -5,6 +5,7 @@ import { MagnifyingGlass, X } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CategoryTree } from './CategoryTree';
 import { SeriesChart } from '@/components/charts/SeriesChart';
+import { useCompareGate } from '@/lib/leadGateStore';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
@@ -23,6 +24,7 @@ export function CompareExplorer() {
   const [selected, setSelected] = useState<Map<string, string>>(new Map());
   const [seriesData, setSeriesData] = useState<SeriesDocument[]>([]);
   const [loadingChart, setLoadingChart] = useState(false);
+  const { attemptCompare } = useCompareGate();
 
   useEffect(() => {
     if (!query.trim()) {
@@ -42,16 +44,27 @@ export function CompareExplorer() {
   }, [query, activeSource]);
 
   function toggleSeries(id: string, name: string) {
-    setSelected((prev) => {
-      const next = new Map(prev);
-      if (next.has(id)) {
+    if (selected.has(id)) {
+      setSelected((prev) => {
+        const next = new Map(prev);
         next.delete(id);
-      } else {
-        if (next.size >= MAX_OVERLAY) return prev;
-        next.set(id, name);
-      }
-      return next;
-    });
+        return next;
+      });
+      return;
+    }
+
+    if (selected.size >= MAX_OVERLAY) return;
+
+    // Gate the 3rd+ concurrent comparison. attemptCompare has side effects
+    // (localStorage), so it's called here against the current render's
+    // `selected` rather than inside a setState updater, which React may
+    // invoke more than once.
+    const wouldBeIds = [...selected.keys(), id];
+    if (wouldBeIds.length >= 3 && !attemptCompare(wouldBeIds)) {
+      return; // gated — the lead-gate modal is already open
+    }
+
+    setSelected((prev) => new Map(prev).set(id, name));
   }
 
   useEffect(() => {

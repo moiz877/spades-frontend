@@ -1,0 +1,61 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[table]{xcolor}
+\usepackage{fancyhdr}
+\usepackage{array}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small {{ plant_name }}}
+\fancyhead[R]{\small Techno-Economic Assessment}
+\fancyfoot[C]{\small \thepage}
+
+\begin{document}
+
+\begin{center}
+  {\Large \textbf{Technical Economic Assessment}}\\[4pt]
+  {\large {{ plant_name }}}\\[2pt]
+  \small Generated {{ generated_date }}
+\end{center}
+
+\vspace{1em}
+\noindent\rule{\linewidth}{0.4pt}
+\vspace{1em}
+
+\section*{Executive Summary}
+Based on the EIA-projected series \emph{"{{ series_name }}"} ({{ units }}) and an assumed annual
+consumption of {{ "{:,.0f}".format(consumption_mwh) }} MWh, the projected 10-year cumulative cost
+{% if ten_yr_delta >= 0 %}increase{% else %}decrease{% endif %} relative to holding prices at the
+current-year baseline is \textbf{\${{ "{:,.0f}".format(ten_yr_delta|abs) }}}.
+This assessment is intended to support capital planning discussions and should be reviewed
+alongside site-specific engineering and procurement data.
+
+\section*{Year-by-Year Projection}
+\begin{center}
+\begin{tabular}{r r r r}
+\toprule
+\textbf{Year} & \textbf{Baseline Cost} & \textbf{Projected Cost} & \textbf{Delta} \\
+\midrule
+{% for row in roi_table %}
+{{ row.year }} & \${{ "{:,.0f}".format(row.baseline_cost) }} & \${{ "{:,.0f}".format(row.projected_cost) }} & \${{ "{:,.0f}".format(row.delta) }} \\
+{% endfor %}
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{2em}
+\noindent\rule{\linewidth}{0.4pt}
+
+\vspace{0.5em}
+\footnotesize
+\noindent
+Source: U.S. Energy Information Administration, series {{ series_id }}.
+Figures are projections derived from EIA outlook data and an assumed constant annual consumption;
+they do not constitute a formal engineering estimate.
+{% if lead_company %}\\Prepared for {{ lead_company }}.{% endif %}
+
+\end{document}

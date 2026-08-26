@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { MagnifyingGlass, X } from '@phosphor-icons/react';
 import { CategoryTree } from './CategoryTree';
 import { SeriesChart } from '@/components/charts/SeriesChart';
+import { ROICalculatorOverlay } from '@/components/ROICalculatorOverlay';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
@@ -109,7 +110,17 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
         </div>
       </aside>
 
-      <main className="glass-panel min-h-[28rem] flex-1 p-6">
+      <main className="glass-panel relative min-h-[28rem] flex-1 p-6">
+        {seriesData.length === 1 && (
+          <ROICalculatorOverlay
+            seriesId={seriesData[0].series_id}
+            seriesName={seriesData[0].name}
+            units={seriesData[0].units}
+            dataPoints={seriesData[0].data}
+            currentYear={Number(seriesData[0].last_historical_period) || new Date().getFullYear()}
+          />
+        )}
+
         {selected.size > 0 && (
           <div className="mb-4 flex flex-wrap gap-2">
             {Array.from(selected.entries()).map(([id, name]) => (
