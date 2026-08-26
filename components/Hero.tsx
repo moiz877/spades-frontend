@@ -21,7 +21,7 @@ export function Hero() {
       <div className="absolute inset-0 opacity-70">
         <Globe />
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#05070a]" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]" />
 
       <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
         <motion.h1

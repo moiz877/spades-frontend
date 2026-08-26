@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowsClockwise } from '@phosphor-icons/react';
+import { ArrowsClockwise, Broadcast } from '@phosphor-icons/react';
+import { Glow } from '@/components/ui/Glow';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 
 interface LiveResponse {
   data?: unknown;
@@ -34,13 +36,15 @@ export function LiveDataCard({ endpoint, title }: { endpoint: string; title: str
     : [];
 
   return (
-    <div className="glass-panel flex flex-col gap-4 p-6">
+    <div className="glass-panel relative flex flex-col gap-4 p-6">
+      <Glow className="right-0 top-0 h-48 w-48 -translate-y-1/3" />
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white">{title}</h3>
         <button
           type="button"
           onClick={load}
-          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/60 transition hover:text-white"
+          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1 text-xs text-white/60 transition hover:border-white/20 hover:text-white active:scale-95"
         >
           <ArrowsClockwise size={12} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -50,14 +54,18 @@ export function LiveDataCard({ endpoint, title }: { endpoint: string; title: str
       {state?.error ? (
         <p className="text-sm text-red-400">{state.error}</p>
       ) : loading && !state ? (
-        <div className="flex h-40 items-center justify-center text-sm text-white/40">Loading live data...</div>
+        <SkeletonTable rows={6} columns={5} />
       ) : (
         <>
           <div className="flex items-center gap-2 text-xs text-white/40">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${state?.fromCache ? 'bg-amber-400' : 'bg-emerald-400'}`}
-              aria-hidden="true"
-            />
+            <span className="relative flex h-2 w-2">
+              {!state?.fromCache && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${state?.fromCache ? 'bg-amber-400' : 'bg-emerald-400'}`}
+              />
+            </span>
             {state?.lastUpdated ? (
               <span>
                 Last updated {new Date(state.lastUpdated).toLocaleString()}
@@ -71,7 +79,10 @@ export function LiveDataCard({ endpoint, title }: { endpoint: string; title: str
 
           <div className="max-h-80 overflow-y-auto">
             {rows.length === 0 ? (
-              <p className="py-6 text-center text-sm text-white/40">No rows returned.</p>
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <Broadcast size={28} className="text-white/15" />
+                <p className="text-sm text-white/40">No rows returned for this window.</p>
+              </div>
             ) : (
               <table className="w-full text-left text-xs">
                 <thead>

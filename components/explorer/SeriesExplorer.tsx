@@ -5,6 +5,8 @@ import { MagnifyingGlass, X } from '@phosphor-icons/react';
 import { CategoryTree } from './CategoryTree';
 import { SeriesChart } from '@/components/charts/SeriesChart';
 import { ROICalculatorOverlay } from '@/components/ROICalculatorOverlay';
+import { Glow } from '@/components/ui/Glow';
+import { SkeletonChart, SkeletonList } from '@/components/ui/Skeleton';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
@@ -64,6 +66,16 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
 
   const selectedIds = new Set(selected.keys());
 
+  const roiBaseline = (() => {
+    if (seriesData.length !== 1) return undefined;
+    const doc = seriesData[0];
+    const currentYear = Number(doc.last_historical_period) || new Date().getFullYear();
+    const basePoint = doc.data.find((p) => p.year === currentYear);
+    if (basePoint?.value == null) return undefined;
+    const lastPoint = doc.data[doc.data.length - 1];
+    return { value: basePoint.value, isIncrease: (lastPoint?.value ?? basePoint.value) >= basePoint.value };
+  })();
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row">
       <aside className="glass-panel flex w-full shrink-0 flex-col gap-4 p-4 lg:w-80">
@@ -82,7 +94,9 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
         <div className="max-h-[60vh] overflow-y-auto">
           {query.trim() ? (
             searching ? (
-              <p className="px-2 py-2 text-xs text-white/40">Searching...</p>
+              <div className="px-1 py-1">
+                <SkeletonList rows={5} />
+              </div>
             ) : results.length === 0 ? (
               <p className="px-2 py-2 text-xs text-white/40">No results for &quot;{query}&quot;.</p>
             ) : (
@@ -111,6 +125,8 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
       </aside>
 
       <main className="glass-panel relative min-h-[28rem] flex-1 p-6">
+        <Glow className="left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3" />
+
         {seriesData.length === 1 && (
           <ROICalculatorOverlay
             seriesId={seriesData[0].series_id}
@@ -138,9 +154,9 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
         )}
 
         {loadingChart ? (
-          <div className="flex h-96 items-center justify-center text-sm text-white/40">Loading chart...</div>
+          <SkeletonChart />
         ) : (
-          <SeriesChart series={seriesData} />
+          <SeriesChart series={seriesData} roiBaseline={roiBaseline} />
         )}
       </main>
     </div>

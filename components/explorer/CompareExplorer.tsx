@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CategoryTree } from './CategoryTree';
 import { SeriesChart } from '@/components/charts/SeriesChart';
 import { useCompareGate } from '@/lib/leadGateStore';
+import { Glow } from '@/components/ui/Glow';
+import { SkeletonChart, SkeletonList } from '@/components/ui/Skeleton';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
@@ -114,7 +116,9 @@ export function CompareExplorer() {
         <div className="max-h-[55vh] overflow-y-auto">
           {query.trim() ? (
             searching ? (
-              <p className="px-2 py-2 text-xs text-white/40">Searching...</p>
+              <div className="px-1 py-1">
+                <SkeletonList rows={5} />
+              </div>
             ) : results.length === 0 ? (
               <p className="px-2 py-2 text-xs text-white/40">No results for &quot;{query}&quot;.</p>
             ) : (
@@ -146,7 +150,9 @@ export function CompareExplorer() {
         </p>
       </aside>
 
-      <main className="glass-panel min-h-[28rem] flex-1 p-6">
+      <main className="glass-panel relative min-h-[28rem] flex-1 p-6">
+        <Glow className="left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3" />
+
         <AnimatePresence mode="popLayout">
           {selected.size > 0 && (
             <motion.div
@@ -176,11 +182,7 @@ export function CompareExplorer() {
         </AnimatePresence>
 
         <motion.div layout transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-          {loadingChart ? (
-            <div className="flex h-96 items-center justify-center text-sm text-white/40">Loading chart...</div>
-          ) : (
-            <SeriesChart series={seriesData} />
-          )}
+          {loadingChart ? <SkeletonChart /> : <SeriesChart series={seriesData} />}
         </motion.div>
       </main>
     </div>

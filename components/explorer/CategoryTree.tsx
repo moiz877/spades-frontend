@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CaretRight, CaretDown, FileText, CircleNotch } from '@phosphor-icons/react';
+import { CaretRight, CaretDown, FileText } from '@phosphor-icons/react';
+import { SkeletonLine, SkeletonList } from '@/components/ui/Skeleton';
 import type { CategoryNode } from '@/app/api/series/categories/route';
 import type { SeriesSource } from '@/lib/types';
 
@@ -58,10 +59,12 @@ function TreeLevel({
   }, [source, prefix]);
 
   if (nodes === null) {
+    if (depth === 0) {
+      return <SkeletonList rows={6} />;
+    }
     return (
-      <div className="flex items-center gap-2 py-2 text-xs text-white/40" style={{ paddingLeft: depth * 14 }}>
-        <CircleNotch className="animate-spin" size={12} />
-        Loading...
+      <div style={{ paddingLeft: depth * 14 + 8, paddingTop: 4, paddingBottom: 4 }}>
+        <SkeletonLine className="h-6 w-2/3" />
       </div>
     );
   }

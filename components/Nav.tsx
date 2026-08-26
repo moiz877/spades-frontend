@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookCallButton } from './BookCallButton';
+import { CommandPaletteTrigger } from './CommandPaletteTrigger';
 
 const LINKS = [
   { href: '/us-outlook', label: 'US Outlook' },
@@ -10,12 +11,12 @@ const LINKS = [
 
 export function Nav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/5 bg-[#05070a]/80 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="text-sm font-semibold tracking-tight text-white">
-          Energy Outlook Explorer
+    <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-md">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6">
+        <Link href="/" className="shrink-0 text-sm font-semibold tracking-tight text-white">
+          ScaleCase
         </Link>
-        <div className="flex items-center gap-6">
+        <div className="hidden items-center gap-6 md:flex">
           {LINKS.map((link) => (
             <Link
               key={link.href}
@@ -25,6 +26,9 @@ export function Nav() {
               {link.label}
             </Link>
           ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <CommandPaletteTrigger />
           <BookCallButton />
         </div>
       </nav>

@@ -1,9 +1,18 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { CheckCircle, CircleNotch } from '@phosphor-icons/react';
 import { calculateROIDelta, tenYearDelta, type DataPoint } from '@/lib/roiCalculations';
 import { useLeadGateStore } from '@/lib/leadGateStore';
 import { BookCallButton } from './BookCallButton';
+import { Button } from './ui/Button';
+
+// Mirrors the real pdf-service pipeline (calculate_roi_delta, then a
+// tectonic LaTeX compile) — not fabricated steps, just not literally
+// synced to server-side timing since a single request/response can't
+// stream progress without adding SSE/websockets for one button.
+const EXPORT_STEPS = ['Calculating ROI...', 'Compiling LaTeX report...'] as const;
+const STEP_ADVANCE_MS = 700;
 
 export function ROICalculatorOverlay({
   seriesId,
@@ -21,6 +30,7 @@ export function ROICalculatorOverlay({
   const [consumption, setConsumption] = useState<number>(50000); // MWh, sensible default
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportStepIndex, setExportStepIndex] = useState(0);
   const [exported, setExported] = useState(false);
   const { isUnlocked, token, openModal } = useLeadGateStore();
 
@@ -50,6 +60,11 @@ export function ROICalculatorOverlay({
 
     setExporting(true);
     setExportError(null);
+    setExportStepIndex(0);
+    const stepTimer = setInterval(() => {
+      setExportStepIndex((i) => Math.min(i + 1, EXPORT_STEPS.length - 1));
+    }, STEP_ADVANCE_MS);
+
     try {
       const res = await fetch(`${pdfServiceUrl}/generate-tea-report`, {
         method: 'POST',
@@ -84,6 +99,7 @@ export function ROICalculatorOverlay({
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Export failed.');
     } finally {
+      clearInterval(stepTimer);
       setExporting(false);
     }
   }
@@ -118,14 +134,21 @@ export function ROICalculatorOverlay({
 
       {exportError && <p className="mt-3 text-xs text-red-400">{exportError}</p>}
 
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={exporting || !hasData}
-        className="mt-4 w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
-      >
-        {exporting ? 'Generating...' : 'Export CFO-ready TEA report'}
-      </button>
+      <Button type="button" onClick={handleExport} disabled={exporting || !hasData} className="mt-4 w-full">
+        {exporting ? (
+          <>
+            <CircleNotch size={14} className="animate-spin" />
+            {EXPORT_STEPS[exportStepIndex]}
+          </>
+        ) : exported ? (
+          <>
+            <CheckCircle size={14} />
+            Export CFO-ready TEA report
+          </>
+        ) : (
+          'Export CFO-ready TEA report'
+        )}
+      </Button>
 
       {exported && (
         <div className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
