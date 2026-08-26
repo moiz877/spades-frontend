@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getDb } from '@/lib/mongodb';
+import { sendLeadAlertEmail } from '@/lib/email';
 
 function isWorkEmail(email: string): boolean {
   const freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
@@ -46,6 +47,8 @@ export async function POST(req: NextRequest) {
     const signature = crypto.createHmac('sha256', leadTokenSecret).update(tokenPayload).digest('hex');
     const token = `${tokenPayload}.${signature}`;
 
+    const isWork = isWorkEmail(email);
+
     await db.collection('leads').updateOne(
       { email: email.toLowerCase() },
       {
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest) {
           email: email.toLowerCase(),
           company_name: companyName,
           token_payload: tokenPayload,
-          is_work_email_guess: isWorkEmail(email),
+          is_work_email_guess: isWork,
           last_seen: new Date(),
           // context = which series/action triggered the gate — tells sales
           // exactly what this lead cares about before the first call
@@ -63,6 +66,20 @@ export async function POST(req: NextRequest) {
       },
       { upsert: true }
     );
+
+    // Best-effort: the lead is already saved regardless of whether this
+    // succeeds. Awaited (not fire-and-forget) because serverless functions
+    // can be frozen/terminated the instant the response is sent.
+    try {
+      await sendLeadAlertEmail({
+        email: email.toLowerCase(),
+        companyName,
+        isWorkEmailGuess: isWork,
+        context: context ?? null,
+      });
+    } catch (err) {
+      console.error('Lead alert email failed (lead was still saved):', err);
+    }
 
     return NextResponse.json({ success: true, token });
   } catch (err) {

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BookCallButton } from './BookCallButton';
 
 const LINKS = [
   { href: '/us-outlook', label: 'US Outlook' },
@@ -24,6 +25,7 @@ export function Nav() {
               {link.label}
             </Link>
           ))}
+          <BookCallButton />
         </div>
       </nav>
     </header>

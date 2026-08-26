@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { calculateROIDelta, tenYearDelta, type DataPoint } from '@/lib/roiCalculations';
 import { useLeadGateStore } from '@/lib/leadGateStore';
+import { BookCallButton } from './BookCallButton';
 
 export function ROICalculatorOverlay({
   seriesId,
@@ -20,6 +21,7 @@ export function ROICalculatorOverlay({
   const [consumption, setConsumption] = useState<number>(50000); // MWh, sensible default
   const [exportError, setExportError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exported, setExported] = useState(false);
   const { isUnlocked, token, openModal } = useLeadGateStore();
 
   const roiRows = useMemo(() => {
@@ -78,6 +80,7 @@ export function ROICalculatorOverlay({
       a.download = `TEA_Report_${seriesId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      setExported(true); // the hottest moment to offer a call — they just got real value
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Export failed.');
     } finally {
@@ -123,6 +126,13 @@ export function ROICalculatorOverlay({
       >
         {exporting ? 'Generating...' : 'Export CFO-ready TEA report'}
       </button>
+
+      {exported && (
+        <div className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
+          <p className="text-xs text-white/50">Want to walk through this with someone?</p>
+          <BookCallButton className="justify-center" />
+        </div>
+      )}
     </div>
   );
 }

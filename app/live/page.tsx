@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { LiveDataCard } from '@/components/LiveDataCard';
 
 export const metadata: Metadata = {
-  title: 'Live Data | EIA Energy Outlook Explorer',
+  title: 'Live EIA Data',
+  description: 'Live crude oil import data pulled directly from the EIA API v2, refreshed every 24 hours.',
 };
 
 export default function LivePage() {
