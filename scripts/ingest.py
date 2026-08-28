@@ -20,14 +20,18 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Iterator
 
 from pymongo import ASCENDING, MongoClient, TEXT, UpdateOne
+from pymongo.collection import Collection
 from pymongo.errors import ConfigurationError, PyMongoError
 
 BATCH_SIZE = 5000
 LOG_EVERY = 5000
+MAX_WRITE_RETRIES = 5
+RETRY_BASE_DELAY_SECONDS = 3
 
 SOURCES = {
     "aeo": ("AEO2026.txt", "aeo_series"),
@@ -136,6 +140,27 @@ def iter_json_lines(path: Path) -> Iterator[dict[str, Any]]:
                 print(f"  [warn] {path.name}:{line_num} skipped, invalid JSON ({exc})", file=sys.stderr)
 
 
+def bulk_write_with_retry(collection: Collection, ops: list[UpdateOne]):
+    """
+    Retry a bulk_write on transient network errors (a dropped wifi
+    connection, a brief Atlas hiccup) instead of crashing the whole run.
+    Safe to retry: every op here is an idempotent upsert keyed on series_id.
+    """
+    for attempt in range(1, MAX_WRITE_RETRIES + 1):
+        try:
+            return collection.bulk_write(ops, ordered=False)
+        except PyMongoError as exc:
+            if attempt == MAX_WRITE_RETRIES:
+                raise
+            delay = RETRY_BASE_DELAY_SECONDS * attempt
+            print(
+                f"  [warn] write failed ({exc.__class__.__name__}), "
+                f"retrying in {delay}s (attempt {attempt}/{MAX_WRITE_RETRIES})...",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+
+
 def ingest_file(client: MongoClient, db_name: str, data_dir: Path, key: str) -> None:
     filename, collection_name = SOURCES[key]
     path = data_dir / filename
@@ -169,7 +194,7 @@ def ingest_file(client: MongoClient, db_name: str, data_dir: Path, key: str) -> 
         total += 1
 
         if len(ops) >= BATCH_SIZE:
-            result = collection.bulk_write(ops, ordered=False)
+            result = bulk_write_with_retry(collection, ops)
             upserted += result.upserted_count
             modified += result.modified_count
             ops = []
@@ -178,7 +203,7 @@ def ingest_file(client: MongoClient, db_name: str, data_dir: Path, key: str) -> 
             print(f"  ...{total:,} lines processed")
 
     if ops:
-        result = collection.bulk_write(ops, ordered=False)
+        result = bulk_write_with_retry(collection, ops)
         upserted += result.upserted_count
         modified += result.modified_count
 
