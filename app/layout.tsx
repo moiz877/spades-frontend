@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav';
 import { LeadGateModal } from '@/components/LeadGateModal';
 import { CommandPalette } from '@/components/CommandPalette';
 import { PageTransition } from '@/components/PageTransition';
+import { Providers } from '@/components/Providers';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -55,10 +56,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {/* eslint-disable-next-line react/no-danger */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <Nav />
-        <PageTransition>{children}</PageTransition>
-        <LeadGateModal />
-        <CommandPalette />
+        <Providers>
+          <Nav />
+          <PageTransition>{children}</PageTransition>
+          <LeadGateModal />
+          <CommandPalette />
+        </Providers>
       </body>
     </html>
   );

@@ -22,3 +22,37 @@ export interface SeriesDocument {
 export type SeriesMeta = Omit<SeriesDocument, 'data'>;
 
 export type SeriesSource = 'aeo' | 'ieo';
+
+export type TeamRole = 'admin' | 'member';
+
+// _id / company_id / invited_by are MongoDB ObjectIds at rest. Import
+// ObjectId from 'mongodb' where these types are used for real queries;
+// this file stays dependency-light by typing them as the string form
+// only where documents cross into JSON (API responses, JWT claims).
+export interface CompanyDocument {
+  _id: import('mongodb').ObjectId;
+  name: string;
+  created_at: Date;
+}
+
+export interface UserDocument {
+  _id: import('mongodb').ObjectId;
+  email: string;
+  password_hash: string;
+  name: string;
+  company_id: import('mongodb').ObjectId;
+  role: TeamRole;
+  created_at: Date;
+}
+
+export interface InviteDocument {
+  _id: import('mongodb').ObjectId;
+  email: string;
+  company_id: import('mongodb').ObjectId;
+  role: TeamRole;
+  token: string;
+  invited_by: import('mongodb').ObjectId;
+  created_at: Date;
+  expires_at: Date;
+  accepted: boolean;
+}

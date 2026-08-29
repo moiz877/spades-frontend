@@ -57,3 +57,51 @@ function describeContext(context: string): string {
   if (kind === 'compare') return `Hit the free comparison limit comparing ${detail}`;
   return context;
 }
+
+export interface TeamInvitePayload {
+  toEmail: string;
+  companyName: string;
+  inviterName: string;
+  acceptUrl: string;
+}
+
+/**
+ * Sends a team-invite email. Unlike sendLeadAlertEmail, callers should
+ * treat a thrown error here as actionable (surface the acceptUrl to the
+ * inviting admin so they can share it manually) rather than swallowing
+ * it silently -- without RESEND_API_KEY configured, the invite record
+ * still gets created, but nothing tells the invitee about it otherwise.
+ */
+export async function sendTeamInviteEmail(invite: TeamInvitePayload): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not set; share the invite link manually.');
+  }
+
+  const fromEmail = process.env.LEAD_ALERT_FROM ?? 'onboarding@resend.dev';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [invite.toEmail],
+      subject: `${invite.inviterName} invited you to join ${invite.companyName} on ScaleCase`,
+      text: [
+        `${invite.inviterName} has invited you to join ${invite.companyName} on ScaleCase.`,
+        '',
+        `Accept the invite: ${invite.acceptUrl}`,
+        '',
+        'This link expires in 7 days.',
+      ].join('\n'),
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Resend API returned ${res.status}: ${body}`);
+  }
+}

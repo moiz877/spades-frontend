@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BookCallButton } from './BookCallButton';
 import { CommandPaletteTrigger } from './CommandPaletteTrigger';
+import { AuthNavSection } from './AuthNavSection';
 
 const LINKS = [
   { href: '/us-outlook', label: 'US Outlook' },
@@ -27,8 +28,9 @@ export function Nav() {
             </Link>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <CommandPaletteTrigger />
+          <AuthNavSection />
           <BookCallButton />
         </div>
       </nav>
