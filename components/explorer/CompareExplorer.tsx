@@ -9,13 +9,14 @@ import { useCompareGate } from '@/lib/leadGateStore';
 import { Glow } from '@/components/ui/Glow';
 import { SkeletonChart, SkeletonList } from '@/components/ui/Skeleton';
 import { useShareableSeries } from '@/lib/useShareableSeries';
+import { AEO_LABEL } from '@/lib/dataVintage';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const SOURCE_LABELS: Record<SeriesSource, string> = {
-  aeo: 'AEO2026 (US)',
+  aeo: `${AEO_LABEL} (US)`,
   ieo: 'IEO (Global)',
 };
 

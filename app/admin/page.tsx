@@ -14,6 +14,13 @@ interface Lead {
   exports?: { series_id: string; ten_yr_delta: number; at: string }[];
 }
 
+interface DataFreshnessSource {
+  source: string;
+  filename: string;
+  series_count: number;
+  ingested_at: string;
+}
+
 const STORAGE_KEY = 'adminPassword';
 
 export default function AdminPage() {
@@ -22,6 +29,7 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [freshness, setFreshness] = useState<DataFreshnessSource[] | null>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -49,6 +57,11 @@ export default function AdminPage() {
       setLeads(data.leads ?? []);
       setAuthed(true);
       sessionStorage.setItem(STORAGE_KEY, pw);
+
+      fetch('/api/admin/data-freshness', { headers: { Authorization: `Bearer ${pw}` } })
+        .then((r) => r.json())
+        .then((d) => setFreshness(d.sources ?? []))
+        .catch(() => setFreshness(null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load leads.');
     } finally {
@@ -132,6 +145,21 @@ export default function AdminPage() {
       </div>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+      {freshness && freshness.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-3">
+          {freshness.map((src) => (
+            <div
+              key={src.source}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/60"
+            >
+              <span className="font-medium text-white/80">{src.source.toUpperCase()}</span>: {src.filename} (
+              {src.series_count.toLocaleString()} series), ingested{' '}
+              {new Date(src.ingested_at).toLocaleDateString()}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="glass-panel mt-6 overflow-x-auto p-4">
         <table className="w-full min-w-[640px] text-left text-sm">

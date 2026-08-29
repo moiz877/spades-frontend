@@ -7,6 +7,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { OnboardingHint } from '@/components/OnboardingHint';
 import { PageTransition } from '@/components/PageTransition';
 import { Providers } from '@/components/Providers';
+import { AEO_LABEL } from '@/lib/dataVintage';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     'EIA Annual Energy Outlook',
     'EIA International Energy Outlook',
     'energy price projections',
-    'AEO2026',
+    AEO_LABEL,
     'energy cost forecasting',
   ],
   openGraph: {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCollection, isSeriesSource } from '@/lib/series';
+import { AEO_LABEL } from '@/lib/dataVintage';
 import type { SeriesSource } from '@/lib/types';
 
 // Rendered on-demand per series (215k+ of these -- generating them all
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const series = await loadSeries(params.source, params.seriesId);
   if (!series) return { title: 'Series not found' };
 
-  const sourceLabel = params.source === 'aeo' ? 'AEO2026' : 'IEO';
+  const sourceLabel = params.source === 'aeo' ? AEO_LABEL : 'IEO';
   return {
     title: series.name,
     description: `${series.description ?? series.name} (${series.units}), ${sourceLabel} projection through ${series.end}.`,
@@ -42,7 +43,7 @@ export default async function SeriesPage({ params }: PageProps) {
   if (!series) notFound();
 
   const source = params.source as SeriesSource;
-  const sourceLabel = source === 'aeo' ? 'AEO2026 (US)' : 'IEO (Global)';
+  const sourceLabel = source === 'aeo' ? `${AEO_LABEL} (US)` : 'IEO (Global)';
   const explorerHref = source === 'aeo' ? '/us-outlook' : '/global-outlook';
 
   const jsonLd = {

@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
 """
-Ingest EIA AEO2026 / IEO bulk JSON-lines data into MongoDB.
+Ingest EIA AEO / IEO bulk JSON-lines data into MongoDB.
 
-Streams /data/AEO2026.txt -> aeo_series and /data/IEO.txt -> ieo_series,
+Streams /data/AEO<year>.txt -> aeo_series and /data/IEO.txt -> ieo_series,
 line by line (never loads either file fully into memory), bulk-upserting
 by series_id in batches. Safe to re-run: every write is an upsert keyed
 on series_id, so running this twice does not create duplicates.
 
+The AEO filename's year is auto-detected (AEO2026.txt, AEO2027.txt, ...)
+rather than hardcoded, so dropping in next year's bulk file and re-running
+this script is the entire re-ingestion process -- no code change needed.
+After a run finishes, the detected AEO year is written to `lib.dataVintage`
+so the frontend's copy ("AEO2026 · US Outlook", etc.) stays in sync, and to
+a `_ingestion_meta` collection so scripts/check_aeo_freshness.py and the
+frontend's data-freshness API can report what vintage is actually loaded.
+
 Usage:
     python scripts/ingest.py
-    python scripts/ingest.py --only aeo        # just AEO2026.txt
+    python scripts/ingest.py --only aeo        # just the AEO bulk file
     python scripts/ingest.py --only ieo        # just IEO.txt
     python scripts/ingest.py --data-dir /path  # override the data dir (default: ./data)
 """
@@ -19,8 +27,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -33,10 +43,45 @@ LOG_EVERY = 5000
 MAX_WRITE_RETRIES = 5
 RETRY_BASE_DELAY_SECONDS = 3
 
+AEO_FILENAME_PATTERN = re.compile(r"^AEO(\d{4})\.txt$", re.IGNORECASE)
+
+# ieo is a fixed filename (EIA doesn't put the year in the name); aeo is
+# resolved at runtime by find_aeo_file() since the year changes annually.
 SOURCES = {
-    "aeo": ("AEO2026.txt", "aeo_series"),
+    "aeo": (None, "aeo_series"),
     "ieo": ("IEO.txt", "ieo_series"),
 }
+
+
+def find_aeo_file(data_dir: Path) -> tuple[Path, int]:
+    """
+    Find the AEO bulk file in data_dir, whatever year it's for, by matching
+    AEO<year>.txt. Picks the highest year if more than one is present
+    (e.g. both AEO2026.txt and AEO2027.txt during a transition).
+    """
+    candidates: list[tuple[int, Path]] = []
+    if data_dir.is_dir():
+        for entry in data_dir.iterdir():
+            match = AEO_FILENAME_PATTERN.match(entry.name)
+            if match:
+                candidates.append((int(match.group(1)), entry))
+
+    if not candidates:
+        sys.exit(
+            f"\nNo AEO bulk file found in {data_dir}.\n"
+            "Expected a file named like AEO2026.txt (any year). Place the EIA "
+            "bulk file there and re-run.\n"
+        )
+
+    candidates.sort(key=lambda pair: pair[0], reverse=True)
+    year, path = candidates[0]
+    if len(candidates) > 1:
+        print(
+            f"  [warn] multiple AEO bulk files found ({', '.join(p.name for _, p in candidates)}); "
+            f"using the newest: {path.name}",
+            file=sys.stderr,
+        )
+    return path, year
 
 
 def get_mongo_client(mongo_uri: str) -> MongoClient:
@@ -161,18 +206,49 @@ def bulk_write_with_retry(collection: Collection, ops: list[UpdateOne]):
             time.sleep(delay)
 
 
-def ingest_file(client: MongoClient, db_name: str, data_dir: Path, key: str) -> None:
-    filename, collection_name = SOURCES[key]
-    path = data_dir / filename
+def record_ingestion_meta(client: MongoClient, db_name: str, key: str, filename: str, line_count: int) -> None:
+    """
+    Record which file/vintage was last ingested for `key`, so
+    scripts/check_aeo_freshness.py and the frontend can report what's
+    actually loaded without re-parsing collections.
+    """
+    client[db_name]["_ingestion_meta"].update_one(
+        {"source": key},
+        {
+            "$set": {
+                "source": key,
+                "filename": filename,
+                "series_count": line_count,
+                "ingested_at": datetime.now(timezone.utc),
+            }
+        },
+        upsert=True,
+    )
 
+
+def update_aeo_year_constant(repo_root: Path, year: int) -> None:
+    """
+    Keep lib/dataVintage.ts's AEO_YEAR in sync with whatever AEO<year>.txt
+    was actually just ingested, so the frontend's "AEO2026" copy doesn't
+    silently drift from the data actually in MongoDB.
+    """
+    vintage_path = repo_root / "lib" / "dataVintage.ts"
+    if not vintage_path.exists():
+        return
+    contents = vintage_path.read_text()
+    updated = re.sub(r"export const AEO_YEAR = \d+;", f"export const AEO_YEAR = {year};", contents)
+    if updated != contents:
+        vintage_path.write_text(updated)
+        print(f"  Updated lib/dataVintage.ts: AEO_YEAR = {year}")
+
+
+def ingest_file(client: MongoClient, db_name: str, path: Path, collection_name: str, key: str) -> None:
     if not path.exists():
-        sys.exit(
-            f"\nData file not found: {path}\n"
-            f"Expected {filename} in {data_dir}. Place the EIA bulk file there and re-run.\n"
-        )
+        sys.exit(f"\nData file not found: {path}\n")
 
     db = client[db_name]
     collection = db[collection_name]
+    filename = path.name
 
     print(f"\n=== Ingesting {filename} -> {db_name}.{collection_name} ===")
 
@@ -218,6 +294,8 @@ def ingest_file(client: MongoClient, db_name: str, data_dir: Path, key: str) -> 
     collection.create_index([("category_path", ASCENDING)], name="category_path_idx")
     print("Indexes ready: name_text (text), series_id_idx (unique), category_path_idx.")
 
+    record_ingestion_meta(client, db_name, key, filename, total)
+
 
 def main() -> None:
     repo_root = Path(__file__).resolve().parent.parent
@@ -228,7 +306,7 @@ def main() -> None:
     parser.add_argument(
         "--data-dir",
         default=os.environ.get("DATA_DIR", str(repo_root / "data")),
-        help="Directory containing AEO2026.txt / IEO.txt (default: ./data).",
+        help="Directory containing AEO<year>.txt / IEO.txt (default: ./data).",
     )
     parser.add_argument(
         "--db-name",
@@ -252,8 +330,17 @@ def main() -> None:
     data_dir = Path(args.data_dir)
 
     keys = [args.only] if args.only else list(SOURCES.keys())
+    aeo_year: int | None = None
     for key in keys:
-        ingest_file(client, args.db_name, data_dir, key)
+        static_filename, collection_name = SOURCES[key]
+        if key == "aeo":
+            path, aeo_year = find_aeo_file(data_dir)
+        else:
+            path = data_dir / static_filename
+        ingest_file(client, args.db_name, path, collection_name, key)
+
+    if aeo_year is not None:
+        update_aeo_year_constant(repo_root, aeo_year)
 
     print("\nIngestion complete.")
 

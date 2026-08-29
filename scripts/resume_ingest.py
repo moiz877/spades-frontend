@@ -53,13 +53,20 @@ def main() -> None:
 
     incomplete_sources: list[str] = []
 
-    for key, (filename, collection_name) in ingest.SOURCES.items():
-        path = data_dir / filename
-        if not path.exists():
-            print(f"[skip] {filename} not found in {data_dir}, cannot check this source.")
-            continue
+    for key, (static_filename, collection_name) in ingest.SOURCES.items():
+        if key == "aeo":
+            try:
+                path, _ = ingest.find_aeo_file(data_dir)
+            except SystemExit:
+                print(f"[skip] no AEO<year>.txt found in {data_dir}, cannot check this source.")
+                continue
+        else:
+            path = data_dir / static_filename
+            if not path.exists():
+                print(f"[skip] {static_filename} not found in {data_dir}, cannot check this source.")
+                continue
 
-        print(f"Counting lines in {filename}...")
+        print(f"Counting lines in {path.name}...")
         expected = count_lines(path)
         actual = db[collection_name].count_documents({})
         gap = expected - actual

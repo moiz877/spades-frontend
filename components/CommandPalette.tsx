@@ -14,12 +14,13 @@ import {
   Bookmark,
 } from '@phosphor-icons/react';
 import { useCommandPaletteStore } from '@/lib/commandPaletteStore';
+import { AEO_LABEL } from '@/lib/dataVintage';
 
 const PAGES = [
   { href: '/', label: 'Home', icon: House },
   { href: '/tea-builder', label: 'TEA Builder', icon: Calculator },
   { href: '/scenarios', label: 'Saved scenarios', icon: Bookmark },
-  { href: '/us-outlook', label: 'US Outlook (AEO2026)', icon: ChartLineUp },
+  { href: '/us-outlook', label: `US Outlook (${AEO_LABEL})`, icon: ChartLineUp },
   { href: '/global-outlook', label: 'Global Outlook (IEO)', icon: GlobeIcon },
   { href: '/compare', label: 'Compare series', icon: Stack },
   { href: '/live', label: 'Live EIA data', icon: Broadcast },
