@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MagnifyingGlass, X } from '@phosphor-icons/react';
+import { Check, Link as LinkIcon, MagnifyingGlass, X } from '@phosphor-icons/react';
 import { CategoryTree } from './CategoryTree';
 import { SeriesChart } from '@/components/charts/SeriesChart';
 import { ROICalculatorOverlay } from '@/components/ROICalculatorOverlay';
 import { Glow } from '@/components/ui/Glow';
 import { SkeletonChart, SkeletonList } from '@/components/ui/Skeleton';
+import { useShareableSeries } from '@/lib/useShareableSeries';
 import type { SeriesDocument, SeriesMeta, SeriesSource } from '@/lib/types';
 
 const MAX_OVERLAY = 6;
@@ -16,9 +17,10 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SeriesMeta[]>([]);
   const [searching, setSearching] = useState(false);
-  const [selected, setSelected] = useState<Map<string, string>>(new Map());
+  const { selected, setSelected, hydrateNames } = useShareableSeries();
   const [seriesData, setSeriesData] = useState<SeriesDocument[]>([]);
   const [loadingChart, setLoadingChart] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -59,12 +61,26 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
     setLoadingChart(true);
     fetch(`/api/series/compare?ids=${ids.join(',')}`)
       .then((res) => res.json())
-      .then((data) => setSeriesData(data.series ?? []))
+      .then((data) => {
+        const docs: SeriesDocument[] = data.series ?? [];
+        setSeriesData(docs);
+        hydrateNames(docs);
+      })
       .catch(() => setSeriesData([]))
       .finally(() => setLoadingChart(false));
+    // hydrateNames is stable across renders (from useShareableSeries), so
+    // omitting it here avoids re-fetching every time a name resolves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
   const selectedIds = new Set(selected.keys());
+
+  function copyShareLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1500);
+    });
+  }
 
   const roiBaseline = (() => {
     if (seriesData.length !== 1) return undefined;
@@ -138,7 +154,7 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
         )}
 
         {selected.size > 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             {Array.from(selected.entries()).map(([id, name]) => (
               <span
                 key={id}
@@ -150,6 +166,14 @@ export function SeriesExplorer({ source, title }: { source: SeriesSource; title:
                 </button>
               </span>
             ))}
+            <button
+              type="button"
+              onClick={copyShareLink}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/50 transition hover:text-cyan-300"
+            >
+              {linkCopied ? <Check size={12} /> : <LinkIcon size={12} />}
+              {linkCopied ? 'Copied' : 'Copy link'}
+            </button>
           </div>
         )}
 

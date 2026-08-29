@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono';
 import { Nav } from '@/components/Nav';
 import { LeadGateModal } from '@/components/LeadGateModal';
 import { CommandPalette } from '@/components/CommandPalette';
+import { OnboardingHint } from '@/components/OnboardingHint';
 import { PageTransition } from '@/components/PageTransition';
 import { Providers } from '@/components/Providers';
 import './globals.css';
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PageTransition>{children}</PageTransition>
           <LeadGateModal />
           <CommandPalette />
+          <OnboardingHint />
         </Providers>
       </body>
     </html>

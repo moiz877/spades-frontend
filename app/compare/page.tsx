@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { CompareExplorer } from '@/components/explorer/CompareExplorer';
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function ComparePage() {
-  return <CompareExplorer />;
+  return (
+    <Suspense fallback={<div className="px-6 py-10 text-sm text-white/40">Loading...</div>}>
+      <CompareExplorer />
+    </Suspense>
+  );
 }

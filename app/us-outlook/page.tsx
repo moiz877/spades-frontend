@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { SeriesExplorer } from '@/components/explorer/SeriesExplorer';
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function UsOutlookPage() {
-  return <SeriesExplorer source="aeo" title="AEO2026 · US Outlook" />;
+  return (
+    <Suspense fallback={<div className="px-6 py-10 text-sm text-white/40">Loading...</div>}>
+      <SeriesExplorer source="aeo" title="AEO2026 · US Outlook" />
+    </Suspense>
+  );
 }
