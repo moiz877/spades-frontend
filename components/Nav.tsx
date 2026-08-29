@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BookCallButton } from './BookCallButton';
 import { CommandPaletteTrigger } from './CommandPaletteTrigger';
 import { AuthNavSection } from './AuthNavSection';
+import { MobileNavMenu } from './MobileNavMenu';
 
 const LINKS = [
   { href: '/tea-builder', label: 'TEA Builder' },
@@ -33,6 +34,7 @@ export function Nav() {
           <CommandPaletteTrigger />
           <AuthNavSection />
           <BookCallButton />
+          <MobileNavMenu />
         </div>
       </nav>
     </header>
