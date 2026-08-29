@@ -18,6 +18,12 @@ class FeedstockInput(BaseModel):
     commodity_key: str = Field(description="Key into the commodity_prices cache, e.g. 'sulfuric_acid'.")
     quantity_per_year: float = Field(gt=0, description="Annual consumption.")
     unit: str = Field(description="Unit for quantity_per_year, e.g. 'metric_ton'.")
+    price_override: float | None = Field(
+        default=None,
+        gt=0,
+        description="$ per unit, used instead of the cached commodity price if provided. "
+        "Lets the tool run before commodity_key coverage/verification is complete.",
+    )
 
 
 class UtilityInput(BaseModel):
@@ -27,6 +33,7 @@ class UtilityInput(BaseModel):
     commodity_key: str = Field(description="Key into the commodity_prices cache, e.g. 'electricity'.")
     quantity_per_year: float = Field(gt=0)
     unit: str = Field(description="Unit for quantity_per_year, e.g. 'MWh'.")
+    price_override: float | None = Field(default=None, gt=0, description="$ per unit, overrides the cached price.")
 
 
 class ProcessInputs(BaseModel):

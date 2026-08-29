@@ -4,6 +4,7 @@ import { CommandPaletteTrigger } from './CommandPaletteTrigger';
 import { AuthNavSection } from './AuthNavSection';
 
 const LINKS = [
+  { href: '/tea-builder', label: 'TEA Builder' },
   { href: '/us-outlook', label: 'US Outlook' },
   { href: '/global-outlook', label: 'Global Outlook' },
   { href: '/live', label: 'Live Data' },

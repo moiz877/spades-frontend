@@ -56,3 +56,15 @@ export interface InviteDocument {
   expires_at: Date;
   accepted: boolean;
 }
+
+export interface TeaScenarioDocument {
+  _id: import('mongodb').ObjectId;
+  company_id: import('mongodb').ObjectId;
+  created_by: import('mongodb').ObjectId;
+  created_by_name: string;
+  name: string;
+  inputs: import('./teaTypes').ProcessInputs;
+  result: import('./teaTypes').TEAResult;
+  sensitivity: import('./teaTypes').SensitivityRow[];
+  created_at: Date;
+}

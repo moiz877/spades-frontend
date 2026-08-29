@@ -18,6 +18,11 @@ from pydantic import BaseModel
 from jinja2 import Environment, FileSystemLoader
 from pymongo import MongoClient
 
+from tea_engine.calculations import run_tea
+from tea_engine.commodity_prices import CommodityPriceError, get_commodity_price
+from tea_engine.models import ProcessInputs
+from tea_engine.sensitivity import run_sensitivity
+
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 _LATEX_SPECIAL_CHARS = {
@@ -129,6 +134,62 @@ class ExportRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+class RunTeaRequest(BaseModel):
+    inputs: ProcessInputs
+    include_sensitivity: bool = False
+
+
+def _resolve_prices(items, commodity_collection) -> dict[str, float]:
+    """price_override wins if given; otherwise pull the cached commodity
+    price. A lookup failure is logged, not fatal -- run_tea() surfaces a
+    note and treats the input as $0 rather than crashing the whole run."""
+    prices: dict[str, float] = {}
+    for item in items:
+        if item.price_override is not None:
+            prices[item.commodity_key] = item.price_override
+            continue
+        try:
+            prices[item.commodity_key] = get_commodity_price(commodity_collection, item.commodity_key)
+        except CommodityPriceError as exc:
+            print(f"[warn] no price available for '{item.commodity_key}': {exc}")
+    return prices
+
+
+@app.post("/run-tea")
+def run_tea_endpoint(req: RunTeaRequest):
+    """
+    Runs the TEA engine on a submitted process configuration. Deliberately
+    NOT gated behind the lead token -- this is the core interactive tool
+    that should hook a user before asking for their email; only the PDF
+    export and unlimited comparisons are paywalled, matching the existing
+    free-then-gate pattern elsewhere in the app.
+    """
+    commodity_collection = db["commodity_prices"]
+    feedstock_prices = _resolve_prices(req.inputs.feedstocks, commodity_collection)
+    utility_prices = _resolve_prices(req.inputs.utilities, commodity_collection)
+
+    try:
+        result = run_tea(req.inputs, feedstock_prices, utility_prices)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    response: dict = {"result": result.model_dump()}
+
+    if req.include_sensitivity:
+        sensitivity_rows = run_sensitivity(req.inputs, feedstock_prices, utility_prices)
+        response["sensitivity"] = [
+            {
+                "parameter": row.parameter,
+                "low_npv": round(row.low_npv, 2),
+                "base_npv": round(row.base_npv, 2),
+                "high_npv": round(row.high_npv, 2),
+            }
+            for row in sensitivity_rows
+        ]
+
+    return response
 
 
 @app.post("/generate-tea-report")
