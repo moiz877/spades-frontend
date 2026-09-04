@@ -67,10 +67,39 @@ export interface SensitivityRow {
   high_npv: number;
 }
 
+export interface HurdleComparison {
+  irr_hurdle_pct: number;
+  payback_hurdle_years: number;
+  meets_irr_hurdle: boolean | null;
+  meets_payback_hurdle: boolean | null;
+}
+
+export interface NarrativeSections {
+  verdict: 'positive' | 'marginal' | 'negative';
+  executive_summary: string;
+  key_risks: string[];
+  recommendations: string[];
+  hurdle_comparison: HurdleComparison;
+}
+
 export interface RunTeaResponse {
   result: TEAResult;
   sensitivity?: SensitivityRow[];
+  // Optional so scenarios saved before this feature existed still load.
+  narrative?: NarrativeSections;
 }
+
+export interface BenchmarkResult {
+  name: string;
+  assumed_price: number;
+  matched_series: { series_id: string; name: string; units: string } | null;
+  projected_range: { min: number; max: number; median: number } | null;
+  percentile: number | null;
+  note: string;
+}
+
+export const DEFAULT_IRR_HURDLE_PCT = 0.15;
+export const DEFAULT_PAYBACK_HURDLE_YEARS = 5;
 
 export const DEFAULT_PROCESS_INPUTS: ProcessInputs = {
   process_name: '',

@@ -21,6 +21,7 @@ from pymongo import MongoClient
 from tea_engine.calculations import run_tea
 from tea_engine.commodity_prices import CommodityPriceError, get_commodity_price
 from tea_engine.models import ProcessInputs
+from tea_engine.narrative import DEFAULT_IRR_HURDLE_PCT, DEFAULT_PAYBACK_HURDLE_YEARS, generate_narrative
 from tea_engine.sensitivity import run_sensitivity
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
@@ -139,6 +140,8 @@ def health():
 class RunTeaRequest(BaseModel):
     inputs: ProcessInputs
     include_sensitivity: bool = False
+    irr_hurdle_pct: float = DEFAULT_IRR_HURDLE_PCT
+    payback_hurdle_years: float = DEFAULT_PAYBACK_HURDLE_YEARS
 
 
 def _resolve_prices(items, commodity_collection) -> dict[str, float]:
@@ -177,8 +180,13 @@ def run_tea_endpoint(req: RunTeaRequest):
 
     response: dict = {"result": result.model_dump()}
 
+    # The narrative's key-risks/recommendations lean on the tornado ranking,
+    # so compute it either way -- only the raw per-row array in the response
+    # is gated behind include_sensitivity (it's what drives the chart, and
+    # skipping it saves the extra run_tea() calls when the UI doesn't need it).
+    sensitivity_rows = run_sensitivity(req.inputs, feedstock_prices, utility_prices)
+
     if req.include_sensitivity:
-        sensitivity_rows = run_sensitivity(req.inputs, feedstock_prices, utility_prices)
         response["sensitivity"] = [
             {
                 "parameter": row.parameter,
@@ -188,6 +196,11 @@ def run_tea_endpoint(req: RunTeaRequest):
             }
             for row in sensitivity_rows
         ]
+
+    narrative = generate_narrative(
+        req.inputs, result, sensitivity_rows, req.irr_hurdle_pct, req.payback_hurdle_years
+    )
+    response["narrative"] = narrative.model_dump()
 
     return response
 

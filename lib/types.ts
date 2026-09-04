@@ -66,5 +66,6 @@ export interface TeaScenarioDocument {
   inputs: import('./teaTypes').ProcessInputs;
   result: import('./teaTypes').TEAResult;
   sensitivity: import('./teaTypes').SensitivityRow[];
+  narrative?: import('./teaTypes').NarrativeSections;
   created_at: Date;
 }

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions, toObjectId } from '@/lib/auth';
 import { getDb } from '@/lib/mongodb';
 import type { TeaScenarioDocument } from '@/lib/types';
-import type { ProcessInputs, TEAResult, SensitivityRow } from '@/lib/teaTypes';
+import type { ProcessInputs, TEAResult, SensitivityRow, NarrativeSections } from '@/lib/teaTypes';
 
 const MAX_SCENARIOS = 200;
 
@@ -39,14 +39,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
   }
 
-  let body: { name?: string; inputs?: ProcessInputs; result?: TEAResult; sensitivity?: SensitivityRow[] };
+  let body: {
+    name?: string;
+    inputs?: ProcessInputs;
+    result?: TEAResult;
+    sensitivity?: SensitivityRow[];
+    narrative?: NarrativeSections;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { name, inputs, result, sensitivity } = body;
+  const { name, inputs, result, sensitivity, narrative } = body;
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Scenario name is required.' }, { status: 400 });
   }
@@ -64,6 +70,7 @@ export async function POST(req: NextRequest) {
       inputs,
       result,
       sensitivity: sensitivity ?? [],
+      narrative,
       created_at: new Date(),
     } as TeaScenarioDocument);
 
