@@ -1,20 +1,14 @@
 'use client';
 
 import { Source_Serif_4 } from 'next/font/google';
-import { CheckCircle, Warning, XCircle } from '@phosphor-icons/react';
 import type { BenchmarkResult, NarrativeSections } from '@/lib/teaTypes';
+import { VERDICT_STYLES } from '@/lib/teaVerdict';
 
 // Scoped to this component only (via the variable + className below), not
 // applied globally -- the report card is meant to read like a printed
 // consultancy deliverable inside the app's otherwise dark/cyan shell, not
 // change the whole product's typography.
 const reportSerif = Source_Serif_4({ subsets: ['latin'], weight: ['500', '600', '700'], variable: '--font-report-serif' });
-
-const VERDICT_STYLES: Record<NarrativeSections['verdict'], { label: string; icon: typeof CheckCircle; classes: string }> = {
-  positive: { label: 'Investable', icon: CheckCircle, classes: 'bg-emerald-100 text-emerald-800' },
-  marginal: { label: 'Marginal', icon: Warning, classes: 'bg-amber-100 text-amber-800' },
-  negative: { label: 'Not investable', icon: XCircle, classes: 'bg-red-100 text-red-800' },
-};
 
 export function ExecutiveSummaryReport({
   narrative,

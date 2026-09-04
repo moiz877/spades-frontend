@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Trash } from '@phosphor-icons/react';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { VERDICT_STYLES } from '@/lib/teaVerdict';
+import type { NarrativeSections } from '@/lib/teaTypes';
 
 interface ScenarioSummary {
   _id: string;
@@ -13,6 +15,7 @@ interface ScenarioSummary {
   created_by_name: string;
   created_at: string;
   result: { npv: number; irr: number | null; payback_period_years: number | null };
+  narrative?: NarrativeSections;
 }
 
 export default function ScenariosPage() {
@@ -67,6 +70,14 @@ export default function ScenariosPage() {
                   </p>
                 </Link>
                 <div className="flex items-center gap-4 font-mono-tabular text-xs text-white/60">
+                  {s.narrative && (
+                    <span
+                      className={`hidden items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium sm:flex ${VERDICT_STYLES[s.narrative.verdict].classes}`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${VERDICT_STYLES[s.narrative.verdict].dotClasses}`} />
+                      {VERDICT_STYLES[s.narrative.verdict].label}
+                    </span>
+                  )}
                   <span>NPV ${s.result.npv.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   <span>{s.result.irr !== null ? `${(s.result.irr * 100).toFixed(1)}% IRR` : 'N/A'}</span>
                   <button
