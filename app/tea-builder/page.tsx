@@ -159,7 +159,7 @@ function TeaBuilderContent() {
               step={0.5}
               value={irrHurdlePct * 100}
               onChange={(e) => setIrrHurdlePct((Number(e.target.value) || 0) / 100)}
-              className="rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none focus:border-cyan-400/50"
+              className="font-mono-tabular rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none transition-colors hover:border-white/20 focus:border-cyan-400/50"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-white/50">
@@ -170,7 +170,7 @@ function TeaBuilderContent() {
               step={0.5}
               value={paybackHurdleYears}
               onChange={(e) => setPaybackHurdleYears(Number(e.target.value) || 0)}
-              className="rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none focus:border-cyan-400/50"
+              className="font-mono-tabular rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none transition-colors hover:border-white/20 focus:border-cyan-400/50"
             />
           </label>
         </div>

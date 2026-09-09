@@ -22,7 +22,10 @@ export function ExecutiveSummaryReport({
   const { hurdle_comparison: hurdle } = narrative;
 
   return (
-    <div className={`${reportSerif.variable} rounded-xl border border-white/10 bg-[#f7f5f0] p-6 text-[#1c1a16] shadow-xl sm:p-8`}>
+    <div
+      className={`${reportSerif.variable} rounded-2xl border border-white/10 bg-[#f7f5f0] p-6 text-[#1c1a16] sm:p-8`}
+      style={{ boxShadow: '0 24px 64px -24px rgba(34, 211, 238, 0.18), 0 8px 24px -8px rgba(0, 0, 0, 0.45)' }}
+    >
       <div className="flex items-start justify-between gap-4 border-b border-black/10 pb-4">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-widest text-black/40">Executive summary</p>
@@ -40,7 +43,7 @@ export function ExecutiveSummaryReport({
         {narrative.executive_summary}
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 border-t border-black/10 pt-5 sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-2 gap-4 border-t border-black/10 pt-5">
         <div>
           <p className="text-[11px] uppercase tracking-wide text-black/40">IRR vs. hurdle rate</p>
           <p className="mt-1 text-sm text-[#2b2820]">
@@ -98,13 +101,13 @@ export function ExecutiveSummaryReport({
           <h3 className="font-[family-name:var(--font-report-serif)] text-sm font-semibold text-[#1c1a16]">
             Price benchmarking against EIA projections
           </h3>
-          <div className="mt-3 flex flex-col gap-3">
+          <div className="mt-3 flex flex-col gap-4">
             {benchmarks.map((b, i) => (
-              <div key={i} className="rounded-lg border border-black/10 bg-white/50 p-3 text-sm text-[#2b2820]">
+              <div key={i} className="border-l-2 border-black/15 pl-3 text-sm text-[#2b2820]">
                 <p className="font-medium">{b.name}</p>
                 {b.matched_series && b.projected_range ? (
                   <>
-                    <p className="mt-1 text-black/70">
+                    <p className="mt-1 tabular-nums text-black/70">
                       Assumed ${b.assumed_price.toLocaleString()}/unit sits at the {b.percentile}th percentile of
                       the ${b.projected_range.min.toLocaleString()}-${b.projected_range.max.toLocaleString()}{' '}
                       projected range (median ${b.projected_range.median.toLocaleString()}).

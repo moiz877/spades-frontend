@@ -23,7 +23,7 @@ function NumberField({
         step={step ?? 'any'}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/50"
+        className="font-mono-tabular rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors hover:border-white/20 focus:border-cyan-400/50"
       />
     </div>
   );
@@ -37,7 +37,7 @@ function TextField({ label, value, onChange }: { label: string; value: string; o
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/50"
+        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors hover:border-white/20 focus:border-cyan-400/50"
       />
     </div>
   );
@@ -78,35 +78,37 @@ function LineItemRows<T extends FeedstockInput | UtilityInput>({
       </div>
       <div className="mt-3 flex flex-col gap-3">
         {items.map((item, i) => (
-          <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-white/5 p-3 sm:grid-cols-5">
-            <TextField label="Name" value={item.name} onChange={(v) => update(i, { name: v } as Partial<T>)} />
-            <TextField
-              label="Commodity key"
-              value={item.commodity_key}
-              onChange={(v) => update(i, { commodity_key: v } as Partial<T>)}
-            />
-            <NumberField
-              label="Qty / year"
-              value={item.quantity_per_year}
-              onChange={(v) => update(i, { quantity_per_year: v } as Partial<T>)}
-            />
-            <TextField label="Unit" value={item.unit} onChange={(v) => update(i, { unit: v } as Partial<T>)} />
-            <div className="flex items-end gap-1">
-              <div className="flex-1">
-                <NumberField
-                  label="Price override ($/unit)"
-                  value={item.price_override ?? 0}
-                  onChange={(v) => update(i, { price_override: v || null } as Partial<T>)}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                className="rounded-md p-2 text-white/30 transition hover:text-red-400"
-                aria-label={`Remove ${item.name || title.slice(0, -1)}`}
-              >
-                <Trash size={14} />
-              </button>
+          <div key={i} className="relative flex flex-col gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3">
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="absolute right-2 top-2 rounded-md p-1 text-white/30 transition hover:text-red-400"
+              aria-label={`Remove ${item.name || title.slice(0, -1)}`}
+            >
+              <Trash size={14} />
+            </button>
+            <div className="pr-6">
+              <TextField label="Name" value={item.name} onChange={(v) => update(i, { name: v } as Partial<T>)} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <TextField
+                label="Commodity key"
+                value={item.commodity_key}
+                onChange={(v) => update(i, { commodity_key: v } as Partial<T>)}
+              />
+              <TextField label="Unit" value={item.unit} onChange={(v) => update(i, { unit: v } as Partial<T>)} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <NumberField
+                label="Qty / year"
+                value={item.quantity_per_year}
+                onChange={(v) => update(i, { quantity_per_year: v } as Partial<T>)}
+              />
+              <NumberField
+                label="Price override ($/unit)"
+                value={item.price_override ?? 0}
+                onChange={(v) => update(i, { price_override: v || null } as Partial<T>)}
+              />
             </div>
           </div>
         ))}
@@ -143,7 +145,7 @@ export function ProcessInputForm({
 
       <div>
         <h3 className="text-sm font-semibold text-white">Capital cost scaling</h3>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <NumberField label="Reference plant CapEx ($)" value={value.base_capex} onChange={(v) => set('base_capex', v)} />
           <NumberField label="Reference plant capacity" value={value.base_capacity} onChange={(v) => set('base_capacity', v)} />
           <NumberField label="Your plant capacity" value={value.annual_capacity} onChange={(v) => set('annual_capacity', v)} />
@@ -156,7 +158,7 @@ export function ProcessInputForm({
 
       <div>
         <h3 className="text-sm font-semibold text-white">Product & economics</h3>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <NumberField
             label="Product price ($/unit)"
             value={value.product_price_per_unit}
