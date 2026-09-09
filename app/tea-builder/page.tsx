@@ -18,6 +18,23 @@ import {
   type RunTeaResponse,
 } from '@/lib/teaTypes';
 
+/**
+ * FastAPI's `detail` field is a plain string for an HTTPException (our
+ * 400s), but a raw Pydantic 422 (e.g. quantity_per_year <= 0, which fails
+ * the model's gt=0 constraint before our code ever runs) returns an array
+ * of {msg, loc, ...} objects instead -- `new Error(data.detail)` on that
+ * shape stringifies to the useless "[object Object]".
+ */
+function extractErrorMessage(data: { detail?: unknown }): string {
+  if (typeof data.detail === 'string') return data.detail;
+  if (Array.isArray(data.detail)) {
+    return data.detail
+      .map((e) => (e && typeof e === 'object' && 'msg' in e ? String((e as { msg: unknown }).msg) : String(e)))
+      .join('; ');
+  }
+  return 'Failed to run TEA.';
+}
+
 function TeaBuilderContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
@@ -72,7 +89,7 @@ function TeaBuilderContent() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail ?? 'Failed to run TEA.');
+      if (!res.ok) throw new Error(extractErrorMessage(data));
       setResponse(data);
 
       const priceableItems = [...inputs.feedstocks, ...inputs.utilities]

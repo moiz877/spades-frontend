@@ -60,8 +60,11 @@ function LineItemRows<T extends FeedstockInput | UtilityInput>({
   }
   function add() {
     onChange([
+      // quantity_per_year starts at 1, not 0 -- the backend model requires
+      // gt=0 and a freshly-added row left at the default value would fail
+      // that validation with a confusing raw Pydantic error on submit.
       ...items,
-      { name: '', commodity_key: '', quantity_per_year: 0, unit: '', price_override: null } as T,
+      { name: '', commodity_key: '', quantity_per_year: 1, unit: '', price_override: null } as T,
     ]);
   }
 
