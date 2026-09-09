@@ -11,12 +11,20 @@ import hashlib
 import hmac
 from datetime import datetime
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from jinja2 import Environment, FileSystemLoader
 from pymongo import MongoClient
+
+# python-dotenv doesn't run automatically like it does in some other
+# frameworks -- without this call, os.environ.get() below only ever sees
+# variables actually exported into the shell's environment, not the ones
+# sitting in a local .env file. This must run before _require_env() reads
+# anything.
+load_dotenv()
 
 from tea_engine.calculations import run_tea
 from tea_engine.commodity_prices import CommodityPriceError, get_commodity_price
