@@ -138,6 +138,22 @@ function TeaBuilderContent() {
     }
   }
 
+  function applyEscalation(name: string, escalationPct: number) {
+    const feedstockMatch = inputs.feedstocks.some((f) => f.name === name);
+    const utilityMatch = inputs.utilities.some((u) => u.name === name);
+    if (feedstockMatch) {
+      setInputs({
+        ...inputs,
+        feedstocks: inputs.feedstocks.map((f) => (f.name === name ? { ...f, escalation_pct_per_year: escalationPct } : f)),
+      });
+    } else if (utilityMatch) {
+      setInputs({
+        ...inputs,
+        utilities: inputs.utilities.map((u) => (u.name === name ? { ...u, escalation_pct_per_year: escalationPct } : u)),
+      });
+    }
+  }
+
   return (
     <div className="relative mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 lg:flex-row">
       <Glow className="left-1/4 top-0 h-72 w-72" />
@@ -201,7 +217,11 @@ function TeaBuilderContent() {
             {saveMessage && <p className="mb-4 text-sm text-white/60">{saveMessage}</p>}
             {response.narrative && (
               <div className="mb-6">
-                <ExecutiveSummaryReport narrative={response.narrative} benchmarks={benchmarks} />
+                <ExecutiveSummaryReport
+                  narrative={response.narrative}
+                  benchmarks={benchmarks}
+                  onApplyEscalation={applyEscalation}
+                />
               </div>
             )}
             <TeaResultsPanel data={response} />

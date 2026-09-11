@@ -24,6 +24,12 @@ class FeedstockInput(BaseModel):
         description="$ per unit, used instead of the cached commodity price if provided. "
         "Lets the tool run before commodity_key coverage/verification is complete.",
     )
+    escalation_pct_per_year: float = Field(
+        default=0.0,
+        description="Annual price growth rate applied to this input's cost across the project "
+        "lifetime, e.g. from a linear trend fit to EIA data via /api/tea/benchmark. Defaults to "
+        "0.0 (flat price forever), matching the original MVP model's behavior.",
+    )
 
 
 class UtilityInput(BaseModel):
@@ -34,6 +40,9 @@ class UtilityInput(BaseModel):
     quantity_per_year: float = Field(gt=0)
     unit: str = Field(description="Unit for quantity_per_year, e.g. 'MWh'.")
     price_override: float | None = Field(default=None, gt=0, description="$ per unit, overrides the cached price.")
+    escalation_pct_per_year: float = Field(
+        default=0.0, description="Annual price growth rate applied across the project lifetime. Defaults to 0.0."
+    )
 
 
 class ProcessInputs(BaseModel):
@@ -58,6 +67,9 @@ class ProcessInputs(BaseModel):
     product_price_per_unit: float = Field(gt=0)
     product_annual_volume: float = Field(gt=0)
     product_unit: str
+    product_price_escalation_pct: float = Field(
+        default=0.0, description="Annual product price growth rate across the project lifetime. Defaults to 0.0."
+    )
 
     working_capital_pct_of_capex: float = Field(default=0.15, ge=0, le=1)
     salvage_value: float = Field(default=0.0, ge=0)

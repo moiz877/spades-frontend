@@ -64,7 +64,7 @@ function LineItemRows<T extends FeedstockInput | UtilityInput>({
       // gt=0 and a freshly-added row left at the default value would fail
       // that validation with a confusing raw Pydantic error on submit.
       ...items,
-      { name: '', commodity_key: '', quantity_per_year: 1, unit: '', price_override: null } as T,
+      { name: '', commodity_key: '', quantity_per_year: 1, unit: '', price_override: null, escalation_pct_per_year: 0 } as T,
     ]);
   }
 
@@ -110,6 +110,12 @@ function LineItemRows<T extends FeedstockInput | UtilityInput>({
                 onChange={(v) => update(i, { price_override: v || null } as Partial<T>)}
               />
             </div>
+            <NumberField
+              label="Price escalation (%/yr)"
+              step={0.1}
+              value={(item.escalation_pct_per_year ?? 0) * 100}
+              onChange={(v) => update(i, { escalation_pct_per_year: v / 100 } as Partial<T>)}
+            />
           </div>
         ))}
         {items.length === 0 && <p className="text-xs text-white/30">None added yet.</p>}
@@ -170,6 +176,12 @@ export function ProcessInputForm({
             onChange={(v) => set('product_annual_volume', v)}
           />
           <TextField label="Product unit" value={value.product_unit} onChange={(v) => set('product_unit', v)} />
+          <NumberField
+            label="Price escalation (%/yr)"
+            step={0.1}
+            value={(value.product_price_escalation_pct ?? 0) * 100}
+            onChange={(v) => set('product_price_escalation_pct', v / 100)}
+          />
           <NumberField
             label="Fixed annual costs ($)"
             value={value.fixed_annual_costs}

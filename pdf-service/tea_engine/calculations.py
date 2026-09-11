@@ -48,23 +48,46 @@ def calculate_annual_opex(
 def build_cash_flows(
     capex: float,
     working_capital: float,
-    annual_revenue: float,
-    annual_opex: float,
+    base_product_revenue: float,
+    base_feedstock_costs: dict[str, float],
+    base_utility_costs: dict[str, float],
+    non_escalating_annual_opex: float,
     lifetime_years: int,
     salvage_value: float = 0.0,
+    product_escalation_pct: float = 0.0,
+    feedstock_escalation_pct: dict[str, float] | None = None,
+    utility_escalation_pct: dict[str, float] | None = None,
 ) -> list[float]:
     """
-    Constant-annual-cash-flow model: year 0 is the initial outlay (capex +
-    working capital, negative), years 1..N are net operating cash flow,
-    with working capital recovered and salvage value realized in the
-    final year. This is an MVP-level model (no price escalation, no
-    ramp-up curve) -- good enough for a first-pass screening TEA.
+    Year 0 is the initial outlay (capex + working capital, negative).
+    Years 1..N compound product revenue and each feedstock/utility cost
+    at its own escalation rate (each defaulting to 0.0, which reproduces
+    the original flat-price-forever MVP model exactly); maintenance and
+    fixed costs are held flat since they scale with capex/labor, not a
+    market price series. Working capital is recovered and salvage value
+    realized in the final year.
+
+    Escalation rates come from an OLS linear trend fit to real EIA data
+    (see forecasting.py + /api/tea/benchmark), not an assumption invented
+    here -- this function just compounds whatever rate it's given.
     """
+    feedstock_escalation_pct = feedstock_escalation_pct or {}
+    utility_escalation_pct = utility_escalation_pct or {}
+
     cash_flows = [-(capex + working_capital)]
-    net_annual = annual_revenue - annual_opex
 
     for year in range(1, lifetime_years + 1):
-        cf = net_annual
+        years_elapsed = year - 1  # base-year (year 1) costs use the un-escalated price
+        revenue = base_product_revenue * (1 + product_escalation_pct) ** years_elapsed
+        feedstock_total = sum(
+            cost * (1 + feedstock_escalation_pct.get(name, 0.0)) ** years_elapsed
+            for name, cost in base_feedstock_costs.items()
+        )
+        utility_total = sum(
+            cost * (1 + utility_escalation_pct.get(name, 0.0)) ** years_elapsed
+            for name, cost in base_utility_costs.items()
+        )
+        cf = revenue - (feedstock_total + utility_total + non_escalating_annual_opex)
         if year == lifetime_years:
             cf += working_capital + salvage_value
         cash_flows.append(cf)
@@ -167,9 +190,20 @@ def run_tea(
     )
 
     annual_revenue = inputs.product_price_per_unit * inputs.product_annual_volume
+    non_escalating_opex = opex_breakdown.maintenance + opex_breakdown.fixed
 
     cash_flows = build_cash_flows(
-        capex, working_capital, annual_revenue, opex_breakdown.total, inputs.project_lifetime_years, inputs.salvage_value
+        capex,
+        working_capital,
+        annual_revenue,
+        feedstock_costs,
+        utility_costs,
+        non_escalating_opex,
+        inputs.project_lifetime_years,
+        inputs.salvage_value,
+        product_escalation_pct=inputs.product_price_escalation_pct,
+        feedstock_escalation_pct={f.name: f.escalation_pct_per_year for f in inputs.feedstocks},
+        utility_escalation_pct={u.name: u.escalation_pct_per_year for u in inputs.utilities},
     )
 
     result_npv = npv(inputs.discount_rate, cash_flows)

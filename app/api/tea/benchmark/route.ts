@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/lib/series';
+import { fitPriceTrend } from '@/lib/priceTrend';
 import type { SeriesSource } from '@/lib/types';
 
 const METADATA_PROJECTION = { _id: 0, series_id: 1, name: 1, units: 1 } as const;
@@ -19,6 +20,10 @@ interface BenchmarkResult {
   matched_series: { series_id: string; name: string; units: string } | null;
   projected_range: { min: number; max: number; median: number } | null;
   percentile: number | null;
+  /** Annual growth rate from an OLS trend fit to the matched series -- feed into
+   *  escalation_pct_per_year on the TEA input to model a non-flat price forward. */
+  suggested_escalation_pct: number | null;
+  trend_r_squared: number | null;
   note: string;
 }
 
@@ -50,6 +55,8 @@ async function benchmarkOne(item: BenchmarkRequestItem): Promise<BenchmarkResult
       matched_series: null,
       projected_range: null,
       percentile: null,
+      suggested_escalation_pct: null,
+      trend_r_squared: null,
       note: `No ${source.toUpperCase()} series matched "${item.name}" by name -- cannot benchmark this input.`,
     };
   }
@@ -59,9 +66,8 @@ async function benchmarkOne(item: BenchmarkRequestItem): Promise<BenchmarkResult
     { series_id: matched.series_id },
     { projection: { _id: 0, data: 1 } }
   );
-  const values = (full?.data ?? [])
-    .map((p: { value: number | null }) => p.value)
-    .filter((v: number | null): v is number => v !== null);
+  const dataPoints: { year: number; value: number | null }[] = full?.data ?? [];
+  const values = dataPoints.map((p) => p.value).filter((v): v is number => v !== null);
 
   if (values.length === 0) {
     return {
@@ -70,6 +76,8 @@ async function benchmarkOne(item: BenchmarkRequestItem): Promise<BenchmarkResult
       matched_series: matched,
       projected_range: null,
       percentile: null,
+      suggested_escalation_pct: null,
+      trend_r_squared: null,
       note: `Matched "${matched.name}" but it has no numeric data to benchmark against.`,
     };
   }
@@ -81,12 +89,16 @@ async function benchmarkOne(item: BenchmarkRequestItem): Promise<BenchmarkResult
   const below = values.filter((v) => v <= item.assumed_price).length;
   const percentile = Math.round((below / values.length) * 100);
 
+  const trend = fitPriceTrend(dataPoints);
+
   return {
     name: item.name,
     assumed_price: item.assumed_price,
     matched_series: matched,
     projected_range: { min, max, median },
     percentile,
+    suggested_escalation_pct: trend?.annualGrowthRate ?? null,
+    trend_r_squared: trend?.rSquared ?? null,
     note: `Matched by keyword search against "${matched.name}" (${matched.units}) -- verify this is the right reference series before relying on it.`,
   };
 }

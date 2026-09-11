@@ -10,6 +10,8 @@ export interface FeedstockInput {
   quantity_per_year: number;
   unit: string;
   price_override?: number | null;
+  /** Annual price growth rate applied across the project lifetime. Defaults to 0 (flat price). */
+  escalation_pct_per_year: number;
 }
 
 export interface UtilityInput {
@@ -18,6 +20,7 @@ export interface UtilityInput {
   quantity_per_year: number;
   unit: string;
   price_override?: number | null;
+  escalation_pct_per_year: number;
 }
 
 export interface ProcessInputs {
@@ -34,6 +37,7 @@ export interface ProcessInputs {
   product_price_per_unit: number;
   product_annual_volume: number;
   product_unit: string;
+  product_price_escalation_pct: number;
   working_capital_pct_of_capex: number;
   salvage_value: number;
   project_lifetime_years: number;
@@ -95,6 +99,8 @@ export interface BenchmarkResult {
   matched_series: { series_id: string; name: string; units: string } | null;
   projected_range: { min: number; max: number; median: number } | null;
   percentile: number | null;
+  suggested_escalation_pct: number | null;
+  trend_r_squared: number | null;
   note: string;
 }
 
@@ -115,6 +121,7 @@ export const DEFAULT_PROCESS_INPUTS: ProcessInputs = {
   product_price_per_unit: 1000,
   product_annual_volume: 30_000,
   product_unit: 'metric_ton',
+  product_price_escalation_pct: 0,
   working_capital_pct_of_capex: 0.15,
   salvage_value: 0,
   project_lifetime_years: 15,

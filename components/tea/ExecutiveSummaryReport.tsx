@@ -13,9 +13,12 @@ const reportSerif = Source_Serif_4({ subsets: ['latin'], weight: ['500', '600', 
 export function ExecutiveSummaryReport({
   narrative,
   benchmarks,
+  onApplyEscalation,
 }: {
   narrative: NarrativeSections;
   benchmarks?: BenchmarkResult[];
+  /** Writes a benchmark's OLS-fitted trend back into the matching form field, then the user re-runs. */
+  onApplyEscalation?: (name: string, escalationPct: number) => void;
 }) {
   const verdict = VERDICT_STYLES[narrative.verdict];
   const VerdictIcon = verdict.icon;
@@ -112,6 +115,24 @@ export function ExecutiveSummaryReport({
                       the ${b.projected_range.min.toLocaleString()}-${b.projected_range.max.toLocaleString()}{' '}
                       projected range (median ${b.projected_range.median.toLocaleString()}).
                     </p>
+                    {b.suggested_escalation_pct !== null && (
+                      <p className="mt-1.5 flex flex-wrap items-center gap-2 tabular-nums text-black/70">
+                        <span>
+                          Linear trend on this series suggests{' '}
+                          <span className="font-medium">{(b.suggested_escalation_pct * 100).toFixed(1)}%/yr</span>
+                          {b.trend_r_squared !== null && ` (r² = ${b.trend_r_squared.toFixed(2)})`}.
+                        </span>
+                        {onApplyEscalation && (
+                          <button
+                            type="button"
+                            onClick={() => onApplyEscalation(b.name, b.suggested_escalation_pct as number)}
+                            className="rounded-full border border-black/15 px-2 py-0.5 text-xs font-medium text-[#1c1a16] transition hover:bg-black/5"
+                          >
+                            Apply to model
+                          </button>
+                        )}
+                      </p>
+                    )}
                     <p className="mt-1 text-xs italic text-black/40">{b.note}</p>
                   </>
                 ) : (
