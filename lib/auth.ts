@@ -13,7 +13,9 @@ import type { CompanyDocument, UserDocument } from './types';
 // converted to strings the moment they cross into the JWT/session, and
 // back to ObjectId whenever queried again.
 export const authOptions: AuthOptions = {
-  session: { strategy: 'jwt' },
+  // Explicit 7-day expiry instead of relying on NextAuth's implicit
+  // 30-day default -- a deliberate choice for a B2B tool, not an oversight.
+  session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
   pages: {
     signIn: '/login',
   },

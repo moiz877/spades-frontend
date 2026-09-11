@@ -4,7 +4,7 @@ import { getDb } from '@/lib/mongodb';
 import type { InviteDocument, UserDocument } from '@/lib/types';
 
 const MIN_PASSWORD_LENGTH = 8;
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
 export async function POST(req: NextRequest) {
   let body: { token?: string; name?: string; password?: string };
@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { token, name, password } = body;
-  if (!token) {
+  // A non-string token (e.g. {"$ne": null}) would otherwise be passed
+  // straight into invites.findOne({ token }) and match ANY pending
+  // invite as a MongoDB query operator, letting an attacker join any
+  // company -- including as admin -- without ever receiving the real
+  // invite link.
+  if (!token || typeof token !== 'string') {
     return NextResponse.json({ error: 'Missing invite token.' }, { status: 400 });
   }
   if (!name?.trim()) {

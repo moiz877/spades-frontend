@@ -5,7 +5,7 @@ import type { CompanyDocument, UserDocument } from '@/lib/types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
 /**
  * Registers a new company and its first user as 'admin'. This is the

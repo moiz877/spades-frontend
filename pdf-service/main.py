@@ -51,18 +51,6 @@ def latex_escape(value: str) -> str:
     return "".join(_LATEX_SPECIAL_CHARS.get(ch, ch) for ch in str(value))
 
 
-app = FastAPI()
-
-# Allow the Next.js app's origin(s) to call this service directly from the
-# browser. Restrict this in production to the deployed frontend's real URL.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.environ.get("ALLOWED_ORIGINS", "*").split(","),
-    allow_methods=["POST"],
-    allow_headers=["Content-Type", "X-Lead-Token"],
-)
-
-
 def _require_env(name: str) -> str:
     value = os.environ.get(name)
     if not value:
@@ -71,6 +59,21 @@ def _require_env(name: str) -> str:
         )
     return value
 
+
+app = FastAPI()
+
+# Allow the Next.js app's origin(s) to call this service directly from the
+# browser. Fails closed like MONGO_URI/LEAD_TOKEN_SECRET below -- a silent
+# "*" default here would let any website cross-origin call /run-tea (compute
+# abuse) and attempt to brute-force X-Lead-Token on /generate-tea-report
+# with zero origin restriction. Set ALLOWED_ORIGINS explicitly even in local
+# dev (the .env.example already does).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_require_env("ALLOWED_ORIGINS").split(","),
+    allow_methods=["POST"],
+    allow_headers=["Content-Type", "X-Lead-Token"],
+)
 
 MONGO_URI = _require_env("MONGO_URI")
 LEAD_TOKEN_SECRET = _require_env("LEAD_TOKEN_SECRET")  # separate from the EIA key, never reused
